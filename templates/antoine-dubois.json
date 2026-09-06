@@ -1,0 +1,37 @@
+{
+    "sender": {
+        "name": "Antoine Dubois",
+        "address": {
+            "street": "12 Rue des Lilas",
+            "postal_code": "75014",
+            "city": "Paris"
+        },
+        "phone_number": null,
+        "email": null
+    },
+    "document_date": "2026-10-15",
+    "subject": "Comportement abusif et diffamation par un voisin",
+    "type_of_offense": "personne",
+    "minor_involved": "N",
+    "keywords_content": {
+        "who": [
+            "Antoine Dubois",
+            "Monsieur Pierre Martin",
+            "le gardien",
+            "le syndic"
+        ],
+        "when": [
+            "depuis plusieurs semaines",
+            "récemment"
+        ],
+        "what": [
+            "diffamation publique",
+            "insulte à la famille",
+            "trafiquais des objets volés"
+        ],
+        "how": [
+            "invivable et agressif",
+            "causant un grand stress au quotidien"
+        ]
+    }
+}

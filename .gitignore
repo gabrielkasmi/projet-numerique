@@ -1,0 +1,8 @@
+# Fichiers de travail exclus du dépôt (restent en local, non versionnés)
+opencode.json
+SPECS.md
+Projet numérique .docx
+
+# Divers
+.DS_Store
+*.bak

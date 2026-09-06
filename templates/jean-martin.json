@@ -1,0 +1,38 @@
+{
+    "sender": {
+        "name": "Jean Martin",
+        "address": {
+            "street": "12 rue des Acacias",
+            "postal_code": "69006",
+            "city": "Lyon"
+        },
+        "phone_number": "0612345678",
+        "email": "jean.martin@example.com"
+    },
+    "document_date": "2026-08-23",
+    "subject": "Plainte pour escroquerie et utilisation frauduleuse de mes données personnelles",
+    "type_of_offense": "personne",
+    "minor_involved": "N",
+    "keywords_content": {
+        "who": [
+            "Jean Martin",
+            "une personne",
+            "ma banque",
+            "le Procureur de la République"
+        ],
+        "when": [
+            "14 juillet 2026",
+            "le lendemain"
+        ],
+        "what": [
+            "contact par téléphone",
+            "opération suspecte",
+            "virement de 1850 euros"
+        ],
+        "how": [
+            "utilisation de mes informations personnelles",
+            "demande de confirmation",
+            "validation d'une notification"
+        ]
+    }
+}

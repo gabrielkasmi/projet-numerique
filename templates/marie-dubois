@@ -1,0 +1,41 @@
+{
+    "sender": {
+        "name": "Mme Marie Dubois",
+        "address": {
+            "street": "12 rue des Acacias",
+            "postal_code": "69006",
+            "city": "LYON"
+        },
+        "phone_number": null,
+        "email": null
+    },
+    "document_date": "15 novembre 2026",
+    "subject": "PLAINTE FORMELLE POUR NUISANCES SONORES ET COMPORTEMENT AGRESSIF",
+    "type_of_offense": "personne",
+    "minor_involved": "N",
+    "keywords_content": {
+        "who": [
+            "Mme Marie Dubois",
+            "M. Jean-Pierre Moret"
+        ],
+        "when": [
+            "plus de six mois",
+            "après 22 heures",
+            "week-ends"
+        ],
+        "what": [
+            "nuisances sonores",
+            "comportement agressif",
+            "musique forte",
+            "bruits de travaux la nuit",
+            "cris",
+            "agression verbale",
+            "menaces"
+        ],
+        "how": [
+            "nuisances sonores répétées",
+            "tentatives de conciliation verbale",
+            "lettre de mise en demeure"
+        ]
+    }
+}

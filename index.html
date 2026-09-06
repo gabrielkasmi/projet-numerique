@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boîte du magistrat — Courriers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="auth-gate">
+  <div class="auth-box">
+    <div class="crest">RF</div>
+    <h1>Boîte du magistrat</h1>
+    <p>Accès réservé — merci de saisir le mot de passe.</p>
+    <form id="auth-form">
+      <input id="auth-input" type="password" placeholder="Mot de passe" autocomplete="off">
+      <button type="submit">Accéder</button>
+    </form>
+    <div id="auth-error" class="auth-error" style="display:none;">Mot de passe incorrect.</div>
+  </div>
+</div>
+
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="crest">RF</div>
+      <div>
+        Boîte du magistrat
+        <small>Bureau d'ordre — inbox</small>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-view="mail">Documents</button>
+      <button class="tab-btn" data-view="db">Base de données</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="magistrat"><b id="topbar-count">—</b>dossiers affectés</div>
+  </div>
+
+  <!-- ===================== VUE COURRIERS ===================== -->
+  <div id="view-mail" class="view active">
+    <div class="mail-list">
+      <div class="search">
+        <input id="search-input" type="text" placeholder="Rechercher un expéditeur, un objet…">
+      </div>
+      <div class="count"><span id="list-count">0</span> courrier(s)</div>
+      <div class="mail-items" id="mail-items"></div>
+    </div>
+
+    <div class="reader" id="reader">
+      <div class="reader-empty" id="reader-empty">
+        <div class="big-icon">✉</div>
+        <div>Sélectionnez un courrier dans la liste pour l'ouvrir.</div>
+        <div class="mini-stats" id="mini-stats"></div>
+      </div>
+
+      <div class="reader-content" id="reader-content" style="display:none;">
+        <div class="reader-header">
+          <h2 id="reader-title">—</h2>
+          <div class="doc-id" id="reader-docid"></div>
+        </div>
+        <div class="reader-body">
+          <div class="reader-left">
+            <div class="thumb-box" id="thumb-box">
+              <img id="thumb-img" src="" alt="Aperçu du courrier numérisé">
+            </div>
+            <button class="btn btn-secondary btn-block" id="btn-view-scan">🔍 Voir le scan en grand</button>
+            <div id="reader-fields"></div>
+          </div>
+          <div class="reader-right">
+            <h3 class="reader-right-title">Décision sur le courrier</h3>
+            <div id="reader-decision"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== VUE BASE DE DONNÉES ===================== -->
+  <div id="view-db" class="view">
+    <h2>Base de données des courriers</h2>
+    <p class="subtitle">État de traitement de l'ensemble des courriers numérisés par le bureau d'ordre.</p>
+    <div class="db-table-wrap">
+      <table class="db-table">
+        <thead>
+          <tr>
+            <th>Expéditeur</th>
+            <th>Objet</th>
+            <th>Date</th>
+            <th>Type d'atteinte</th>
+            <th>Mineur</th>
+            <th>Statut</th>
+            <th>Motif / orientation</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="db-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-toolbar">
+    <button class="icon-btn light" id="lb-zoom-out" title="Réduire">−</button>
+    <button class="icon-btn light" id="lb-zoom-reset" title="Réinitialiser le zoom">⤢</button>
+    <button class="icon-btn light" id="lb-zoom-in" title="Agrandir">+</button>
+    <div class="fname light" id="lb-fname"></div>
+    <button class="icon-btn light" id="lb-close" title="Fermer">✕</button>
+  </div>
+  <div class="lightbox-frame" id="lightbox-frame">
+    <img id="lightbox-img" src="" alt="Courrier numérisé en grand">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="auth.js"></script>
+<script src="data.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
