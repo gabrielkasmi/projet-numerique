@@ -12,6 +12,8 @@
   --success:#2f7a4f;
   --success-bg:#eaf5ee;
   --neutral-bg:#eef0f4;
+  --info:#1c3559;
+  --info-bg:#e8eef8;
   --radius:8px;
   --shadow:0 1px 3px rgba(18,35,61,.08), 0 1px 2px rgba(18,35,61,.06);
 }
@@ -110,6 +112,7 @@ body{
 .badge-nontraite{background:var(--neutral-bg); color:#525a6b;}
 .badge-classe{background:var(--danger-bg); color:var(--danger);}
 .badge-poursuites{background:var(--success-bg); color:var(--success);}
+.badge-transfere{background:var(--info-bg); color:var(--info);}
 .badge-mineur{background:#fdf1e0; color:#8a5a12;}
 
 /* ---------- zone de lecture (droite de la liste) ---------- */
@@ -206,6 +209,8 @@ fieldset legend{font-size:11.5px; font-weight:600; color:var(--navy); text-trans
 .btn-classer:hover{background:#f6dcda;}
 .btn-poursuite{background:var(--success-bg); color:var(--success);}
 .btn-poursuite:hover{background:#d9eee1;}
+.btn-transfert{background:var(--info-bg); color:var(--info);}
+.btn-transfert:hover{background:#dbe5f5;}
 .btn-primary{background:var(--navy); color:#fff;}
 .btn-primary:hover{background:var(--navy-light);}
 .btn-secondary{background:#fff; color:var(--text); border:1px solid var(--border);}
@@ -320,3 +325,24 @@ body.authed #auth-gate{display:none;}
   color:var(--danger);
   font-size:12.5px;
 }
+
+/* ===== transfert à un autre magistrat (mention @nom) ===== */
+.mention-field{position:relative;}
+.mention-hint{font-size:11px; color:var(--muted); margin-top:5px; line-height:1.4;}
+.mention-suggestions{
+  display:none;
+  position:absolute; left:0; right:0; top:calc(100% + 2px); z-index:20;
+  background:#fff; border:1px solid var(--border); border-radius:8px;
+  box-shadow:0 6px 20px rgba(18,35,61,.15);
+  max-height:220px; overflow-y:auto;
+  padding:4px;
+}
+.mention-suggestions.open{display:block;}
+.mention-item{
+  display:flex; flex-direction:column; gap:1px;
+  padding:7px 9px; border-radius:6px; cursor:pointer;
+}
+.mention-item:hover{background:var(--info-bg);}
+.mention-item .mention-name{font-size:12.5px; font-weight:600; color:var(--text);}
+.mention-item .mention-role{font-size:11px; color:var(--muted);}
+.mention-empty{padding:9px; font-size:11.5px; color:var(--muted);}

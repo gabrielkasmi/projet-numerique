@@ -65,6 +65,18 @@ const POURSUITE_TYPES = [
 ];
 
 // ---------------------------------------------------------------------------
+// Répertoire des magistrats (mock — destinataires possibles d'un transfert)
+// ---------------------------------------------------------------------------
+const MAGISTRATS = [
+  { id: 'm1', name: 'Camille Fabre', role: "Substitut du procureur — section mineurs" },
+  { id: 'm2', name: 'Antoine Roussel', role: "Substitut du procureur — atteintes aux biens" },
+  { id: 'm3', name: 'Nadia Cherif', role: "Vice-procureure — atteintes aux personnes" },
+  { id: 'm4', name: 'Julien Mercier', role: "Substitut du procureur — cybercriminalité" },
+  { id: 'm5', name: 'Élise Bonnet', role: "Substitut du procureur — permanence" },
+  { id: 'm6', name: 'Thomas Lefèvre', role: "Juge des enfants" },
+];
+
+// ---------------------------------------------------------------------------
 // État persistant (localStorage)
 // ---------------------------------------------------------------------------
 const STATE_KEY = 'magistrat_mailbox_state_v1';
@@ -181,6 +193,7 @@ function typeLabel(t) { return { bien: 'Bien', personne: 'Personne', nation: 'Na
 function statusBadge(status) {
   if (status === 'classe') return '<span class="badge badge-classe">Classé sans suite</span>';
   if (status === 'poursuites') return '<span class="badge badge-poursuites">Poursuites engagées</span>';
+  if (status === 'transfere') return '<span class="badge badge-transfere">Transféré</span>';
   return '<span class="badge badge-nontraite">Non traité</span>';
 }
 
@@ -290,8 +303,9 @@ function generateClassementDocHtml(d, motif, comment) {
 // ---------------------------------------------------------------------------
 let selectedId = null;
 let lbZoom = 1;             // zoom du scan en grand (lightbox)
-let pendingAction = null;   // 'classer' | 'poursuite' | null
+let pendingAction = null;   // 'classer' | 'poursuite' | 'transfert' | null
 let selectedMotif = null;   // { code, label }
+let selectedTransferTarget = null; // magistrat sélectionné via @mention, ou null (bureau d'ordre)
 
 // ---------------------------------------------------------------------------
 // Rendu — liste des courriers
@@ -334,6 +348,7 @@ function selectDoc(id) {
   selectedId = id;
   pendingAction = null;
   selectedMotif = null;
+  selectedTransferTarget = null;
   renderMailList();
   showReader(id);
 }
@@ -457,18 +472,27 @@ function renderReaderDecision() {
     wirePoursuiteForm();
     return;
   }
+  if (pendingAction === 'transfert') {
+    box.innerHTML = transfertFormHtml(rec);
+    wireTransfertForm();
+    return;
+  }
 
   if (status === 'nontraite') {
     box.innerHTML = `
       <div class="action-buttons-col">
         <button class="btn btn-classer" id="btn-classer">Classer sans suite</button>
         <button class="btn btn-poursuite" id="btn-poursuite">Engager des poursuites</button>
+        <button class="btn btn-transfert" id="btn-transfert">Transférer à un autre magistrat</button>
       </div>`;
     document.getElementById('btn-classer').addEventListener('click', () => {
       pendingAction = 'classer'; selectedMotif = null; renderReaderDecision();
     });
     document.getElementById('btn-poursuite').addEventListener('click', () => {
       pendingAction = 'poursuite'; renderReaderDecision();
+    });
+    document.getElementById('btn-transfert').addEventListener('click', () => {
+      pendingAction = 'transfert'; selectedTransferTarget = null; renderReaderDecision();
     });
     return;
   }
@@ -480,6 +504,9 @@ function renderReaderDecision() {
       if (rec.status === 'classe') {
         pendingAction = 'classer';
         selectedMotif = { code: rec.motifCode, label: rec.motifLabel };
+      } else if (rec.status === 'transfere') {
+        pendingAction = 'transfert';
+        selectedTransferTarget = rec.transferTo || null;
       } else {
         pendingAction = 'poursuite';
       }
@@ -489,6 +516,22 @@ function renderReaderDecision() {
 }
 
 function decisionSummaryHtml(rec) {
+  if (rec.status === 'transfere') {
+    const dest = rec.transferTo ? rec.transferTo.name : "Bureau d'ordre";
+    const destRole = rec.transferTo ? rec.transferTo.role : "Réaffectation à déterminer";
+    return `
+      <h3>Décision</h3>
+      <div class="decision-summary">
+        <div class="label">Statut</div><div class="value">Transféré</div>
+        <div class="label">Destinataire</div><div class="value">${escapeHtml(dest)}</div>
+        <div class="label">Fonction</div><div class="value">${escapeHtml(destRole)}</div>
+        ${rec.transferNote ? `<div class="label">Note</div><div class="note">${escapeHtml(rec.transferNote)}</div>` : ''}
+        <div class="label" style="margin-top:8px;">Décidé le</div><div class="value">${escapeHtml(formatTs(rec.decidedAt))}</div>
+      </div>
+      <div class="decision-actions">
+        <button class="btn btn-secondary" id="btn-edit-decision">Modifier la décision</button>
+      </div>`;
+  }
   if (rec.status === 'classe') {
     return `
       <h3>Décision</h3>
@@ -620,6 +663,112 @@ function wirePoursuiteForm() {
 }
 
 // ---------------------------------------------------------------------------
+// Transfert à un autre magistrat (mention @nom, ou retour au bureau d'ordre)
+// ---------------------------------------------------------------------------
+function transfertFormHtml(rec) {
+  let initialValue = '';
+  if (selectedTransferTarget) initialValue = '@' + selectedTransferTarget.name;
+  const noteVal = rec.transferNote || '';
+  return `
+    <h3>Transférer à un autre magistrat</h3>
+    <div class="decision-panel">
+      <div class="field mention-field">
+        <label>Destinataire</label>
+        <input type="text" id="transfer-input" autocomplete="off"
+          placeholder="@ nom du magistrat…" value="${escapeAttr(initialValue)}">
+        <div class="mention-suggestions" id="transfer-suggestions"></div>
+        <div class="mention-hint">Tapez « @ » suivi d'un nom pour rechercher dans le répertoire.
+          Laissez le champ vide si vous ne savez pas à qui l'affecter : le courrier
+          retournera au bureau d'ordre.</div>
+      </div>
+      <div class="field">
+        <label>Note à l'attention du destinataire (facultatif)</label>
+        <textarea id="transfer-note" placeholder="Motif du transfert, éléments utiles…">${escapeHtml(noteVal)}</textarea>
+      </div>
+      <div class="decision-actions">
+        <button class="btn btn-primary" id="btn-confirm-transfert">Confirmer le transfert</button>
+        <button class="btn btn-secondary" id="btn-cancel-transfert">Annuler</button>
+      </div>
+    </div>`;
+}
+
+function mentionSuggestionsHtml(query) {
+  const q = query.trim().toLowerCase();
+  const matches = MAGISTRATS.filter(m => m.name.toLowerCase().includes(q)).slice(0, 6);
+  if (!matches.length) {
+    return `<div class="mention-empty">Aucun magistrat trouvé — laissez le champ vide pour renvoyer au bureau d'ordre.</div>`;
+  }
+  return matches.map(m => `
+    <div class="mention-item" data-id="${m.id}">
+      <span class="mention-name">${escapeHtml(m.name)}</span>
+      <span class="mention-role">${escapeHtml(m.role)}</span>
+    </div>`).join('');
+}
+
+function wireTransfertForm() {
+  const input = document.getElementById('transfer-input');
+  const suggestions = document.getElementById('transfer-suggestions');
+
+  function closeSuggestions() {
+    suggestions.classList.remove('open');
+    suggestions.innerHTML = '';
+  }
+
+  function openSuggestionsFor(query) {
+    suggestions.innerHTML = mentionSuggestionsHtml(query);
+    suggestions.classList.add('open');
+    suggestions.querySelectorAll('.mention-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const m = MAGISTRATS.find(x => x.id === el.dataset.id);
+        selectedTransferTarget = m;
+        input.value = '@' + m.name;
+        closeSuggestions();
+        input.focus();
+      });
+    });
+  }
+
+  input.addEventListener('input', () => {
+    const val = input.value;
+    const at = val.lastIndexOf('@');
+    if (val !== ('@' + (selectedTransferTarget && selectedTransferTarget.name || ''))) {
+      selectedTransferTarget = null;
+    }
+    if (at === -1) { closeSuggestions(); return; }
+    openSuggestionsFor(val.slice(at + 1));
+  });
+  input.addEventListener('focus', () => {
+    if (input.value.includes('@')) openSuggestionsFor(input.value.slice(input.value.lastIndexOf('@') + 1));
+  });
+  document.addEventListener('click', (e) => {
+    if (!suggestions.contains(e.target) && e.target !== input) closeSuggestions();
+  }, { once: true });
+
+  document.getElementById('btn-cancel-transfert').addEventListener('click', () => {
+    pendingAction = null; selectedTransferTarget = null; renderReaderDecision();
+  });
+  document.getElementById('btn-confirm-transfert').addEventListener('click', () => {
+    const val = input.value.trim();
+    const transferNote = document.getElementById('transfer-note').value;
+    let target = null;
+    if (val) {
+      if (!selectedTransferTarget || ('@' + selectedTransferTarget.name) !== val) {
+        toast("Sélectionnez un magistrat dans la liste, ou laissez le champ vide pour renvoyer au bureau d'ordre.");
+        return;
+      }
+      target = selectedTransferTarget;
+    }
+    recordDecision(selectedId, { status: 'transfere', transferTo: target, transferNote, decidedAt: Date.now() });
+    pendingAction = null;
+    selectedTransferTarget = null;
+    renderMailList();
+    renderReaderFields();
+    renderDbTable();
+    toast(target ? `Courrier transféré à ${target.name}.` : "Courrier renvoyé au bureau d'ordre.");
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Rendu — onglet "Base de données"
 // ---------------------------------------------------------------------------
 function renderDbTable() {
@@ -631,6 +780,7 @@ function renderDbTable() {
     let orientation = '—';
     if (status === 'classe') orientation = `${rec.motifCode} — ${rec.motifLabel}`;
     else if (status === 'poursuites') orientation = rec.poursuiteType || '—';
+    else if (status === 'transfere') orientation = rec.transferTo ? `→ ${rec.transferTo.name}` : "→ Bureau d'ordre";
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -658,11 +808,13 @@ function renderMiniStats() {
     nontraite: all.filter(s => s === 'nontraite').length,
     classe: all.filter(s => s === 'classe').length,
     poursuites: all.filter(s => s === 'poursuites').length,
+    transfere: all.filter(s => s === 'transfere').length,
   };
   el.innerHTML = `
     <div class="stat"><div class="num">${counts.nontraite}</div><div class="lbl">Non traités</div></div>
     <div class="stat"><div class="num">${counts.classe}</div><div class="lbl">Classés sans suite</div></div>
     <div class="stat"><div class="num">${counts.poursuites}</div><div class="lbl">Poursuites engagées</div></div>
+    <div class="stat"><div class="num">${counts.transfere}</div><div class="lbl">Transférés</div></div>
   `;
 }
 
