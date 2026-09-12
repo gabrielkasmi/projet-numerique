@@ -9,29 +9,39 @@
         "phone_number": null,
         "email": null
     },
-    "document_date": "2026-10-15",
+    "document_date": "15 Octobre 2026",
     "subject": "Comportement abusif et diffamation par un voisin",
-    "type_of_offense": "personne",
-    "minor_involved": "N",
+    "type_of_offense": "Comportement abusif et diffamation",
+    "minor_involved": "Monsieur Pierre Martin",
+    "keywords": [
+        "diffamation",
+        "voisin",
+        "comportement abusif",
+        "réputation",
+        "insulte"
+    ],
     "keywords_content": {
         "who": [
             "Antoine Dubois",
-            "Monsieur Pierre Martin",
-            "le gardien",
-            "le syndic"
+            "Monsieur Pierre Martin"
         ],
         "when": [
             "depuis plusieurs semaines",
             "récemment"
         ],
+        "where": [
+            "dans l'immeuble",
+            "parties communes"
+        ],
         "what": [
-            "diffamation publique",
-            "insulte à la famille",
+            "diffamer publiquement",
+            "insulte",
             "trafiquais des objets volés"
         ],
         "how": [
-            "invivable et agressif",
-            "causant un grand stress au quotidien"
+            "J'ai déjà tenté de lui parler",
+            "J'ai aussi prévenu le syndic"
         ]
-    }
+    },
+    "digitized_at": "2026-09-05T09:14:00"
 }

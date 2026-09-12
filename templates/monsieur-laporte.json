@@ -1,0 +1,49 @@
+{
+    "sender": {
+        "name": "LAPORTE",
+        "address": {
+            "street": "10 rue Victor Hugo",
+            "postal_code": "33000",
+            "city": "BORDEAUX"
+        },
+        "phone_number": null,
+        "email": null
+    },
+    "document_date": null,
+    "subject": "Plainte contre mon voisin",
+    "type_of_offense": "nuisance",
+    "minor_involved": null,
+    "keywords": [
+        "Plainte",
+        "voisin",
+        "fumée",
+        "cigarette",
+        "logement",
+        "toux",
+        "asthme"
+    ],
+    "keywords_content": {
+        "who": [
+            "je",
+            "mon voisin",
+            "mon médecin"
+        ],
+        "when": [
+            "quotidienne"
+        ],
+        "where": [
+            "1er étage",
+            "2ème étage"
+        ],
+        "what": [
+            "fumée",
+            "cigarette",
+            "toux",
+            "asthme"
+        ],
+        "how": [
+            "La fumée pénètre dans mon logement"
+        ]
+    },
+    "digitized_at": "2026-09-06T10:15:00"
+}

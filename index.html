@@ -27,7 +27,7 @@
       <div class="crest">RF</div>
       <div>
         Boîte du magistrat
-        <small>Bureau d'ordre — inbox</small>
+        <small>BOP — inbox</small>
       </div>
     </div>
     <div class="tabs">
@@ -38,12 +38,17 @@
     <div class="magistrat"><b id="topbar-count">—</b>dossiers affectés</div>
   </div>
 
+  <div class="disclaimer-bar">
+    ⚠️ Outil de démonstration : les plaintes, courriers et scans affichés ici sont entièrement fictifs, générés pour les besoins du test. Aucun document réel émanant d'une juridiction n'a été utilisé — y compris les projets de courrier Word générés automatiquement par l'outil.
+  </div>
+
   <!-- ===================== VUE COURRIERS ===================== -->
   <div id="view-mail" class="view active">
     <div class="mail-list">
       <div class="search">
         <input id="search-input" type="text" placeholder="Rechercher un expéditeur, un objet…">
       </div>
+      <div class="keyword-filters" id="keyword-filters"></div>
       <div class="count"><span id="list-count">0</span> courrier(s)</div>
       <div class="mail-items" id="mail-items"></div>
     </div>
@@ -71,6 +76,7 @@
           <div class="reader-right">
             <h3 class="reader-right-title">Décision sur le courrier</h3>
             <div id="reader-decision"></div>
+            <div class="signalement-box" id="signalement-box"></div>
           </div>
         </div>
       </div>
@@ -80,7 +86,8 @@
   <!-- ===================== VUE BASE DE DONNÉES ===================== -->
   <div id="view-db" class="view">
     <h2>Base de données des courriers</h2>
-    <p class="subtitle">État de traitement de l'ensemble des courriers numérisés par le bureau d'ordre.</p>
+    <p class="subtitle">État de traitement de l'ensemble des courriers numérisés par le BOP.</p>
+    <div class="kpi-grid" id="kpi-grid"></div>
     <div class="db-table-wrap">
       <table class="db-table">
         <thead>

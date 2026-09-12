@@ -1,7 +1,9 @@
 /* Boîte du magistrat — logique de l'application (front only, aucune dépendance serveur).
  * Les documents (scans + extraction OCR) viennent de data.js (généré par generate_data.py).
- * L'état de traitement (édition des champs, classement, poursuites) est conservé dans le
+ * L'état de traitement (édition des champs, décisions, signalements) est conservé dans le
  * localStorage du navigateur : il n'y a pas de base de données partagée dans ce prototype.
+ *
+ * Outil de démonstration : les plaintes et courriers affichés ici sont entièrement fictifs.
  */
 
 // ---------------------------------------------------------------------------
@@ -65,15 +67,30 @@ const POURSUITE_TYPES = [
 ];
 
 // ---------------------------------------------------------------------------
-// Répertoire des magistrats (mock — destinataires possibles d'un transfert)
+// Répertoire de réorientation (mock) — magistrats nommés + services génériques
+// (adresse mail générique, sans destinataire nominatif) proposés dans le
+// champ de tag « @ » du formulaire de réorientation.
 // ---------------------------------------------------------------------------
 const MAGISTRATS = [
-  { id: 'm1', name: 'Camille Fabre', role: "Substitut du procureur — section mineurs" },
-  { id: 'm2', name: 'Antoine Roussel', role: "Substitut du procureur — atteintes aux biens" },
-  { id: 'm3', name: 'Nadia Cherif', role: "Vice-procureure — atteintes aux personnes" },
-  { id: 'm4', name: 'Julien Mercier', role: "Substitut du procureur — cybercriminalité" },
-  { id: 'm5', name: 'Élise Bonnet', role: "Substitut du procureur — permanence" },
-  { id: 'm6', name: 'Thomas Lefèvre', role: "Juge des enfants" },
+  { id: 'm1', name: 'Camille Fabre', role: "Substitut du procureur — section mineurs", email: 'camille.fabre@tribunal-demo.fr' },
+  { id: 'm2', name: 'Antoine Roussel', role: "Substitut du procureur — atteintes aux biens", email: 'antoine.roussel@tribunal-demo.fr' },
+  { id: 'm3', name: 'Nadia Cherif', role: "Vice-procureure — atteintes aux personnes", email: 'nadia.cherif@tribunal-demo.fr' },
+  { id: 'm4', name: 'Julien Mercier', role: "Substitut du procureur — cybercriminalité", email: 'julien.mercier@tribunal-demo.fr' },
+  { id: 'm5', name: 'Élise Bonnet', role: "Substitut du procureur — permanence", email: 'elise.bonnet@tribunal-demo.fr' },
+  { id: 'm6', name: 'Thomas Lefèvre', role: "Juge des enfants", email: 'thomas.lefevre@tribunal-demo.fr' },
+];
+
+const SERVICES = [
+  { id: 's1', name: 'Section mineurs', role: 'Service — boîte générique', email: 'section.mineurs@tribunal-demo.fr' },
+  { id: 's2', name: 'Pôle atteintes aux biens', role: 'Service — boîte générique', email: 'pole.biens@tribunal-demo.fr' },
+  { id: 's3', name: 'Section cybercriminalité', role: 'Service — boîte générique', email: 'cybercriminalite@tribunal-demo.fr' },
+  { id: 's4', name: 'Permanence pénale', role: 'Service — boîte générique', email: 'permanence.penale@tribunal-demo.fr' },
+  { id: 's5', name: "BOP général", role: 'Service — boîte générique', email: 'bop@tribunal-demo.fr' },
+];
+
+const REORIENTATION_TARGETS = [
+  ...MAGISTRATS.map(m => Object.assign({ kind: 'magistrat' }, m)),
+  ...SERVICES.map(s => Object.assign({ kind: 'service' }, s)),
 ];
 
 // ---------------------------------------------------------------------------
@@ -113,6 +130,17 @@ function recordDecision(id, data) {
   saveState();
 }
 
+function addSignalement(id, text) {
+  if (!STATE.docs[id]) STATE.docs[id] = { fields: {} };
+  if (!STATE.docs[id].comments) STATE.docs[id].comments = [];
+  STATE.docs[id].comments.push({ text, ts: Date.now() });
+  saveState();
+}
+
+function getComments(id) {
+  return (STATE.docs[id] && STATE.docs[id].comments) || [];
+}
+
 // ---------------------------------------------------------------------------
 // Modèle document : original (data.js) + surcouche d'édition (STATE)
 // ---------------------------------------------------------------------------
@@ -132,7 +160,7 @@ function flattenOriginal(raw) {
     date: raw.document_date || '',
     subject: raw.subject || '',
     type: raw.type_of_offense || '',
-    minor: raw.minor_involved || 'N',
+    minor: raw.minor_involved || '',
     who: ((raw.keywords_content && raw.keywords_content.who) || []).join('\n'),
     when: ((raw.keywords_content && raw.keywords_content.when) || []).join('\n'),
     what: ((raw.keywords_content && raw.keywords_content.what) || []).join('\n'),
@@ -188,12 +216,12 @@ function parseDateFlexible(str) {
   return isNaN(d) ? null : d;
 }
 
-function typeLabel(t) { return { bien: 'Bien', personne: 'Personne', nation: 'Nation' }[t] || (t || '—'); }
+function typeLabel(t) { return t && String(t).trim() ? t : '—'; }
 
 function statusBadge(status) {
   if (status === 'classe') return '<span class="badge badge-classe">Classé sans suite</span>';
   if (status === 'poursuites') return '<span class="badge badge-poursuites">Poursuites engagées</span>';
-  if (status === 'transfere') return '<span class="badge badge-transfere">Transféré</span>';
+  if (status === 'reoriente') return '<span class="badge badge-reoriente">Réorienté</span>';
   return '<span class="badge badge-nontraite">Non traité</span>';
 }
 
@@ -215,6 +243,10 @@ function downloadBlob(blob, filename) {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
+
+// Mention rappelée dans les documents générés automatiquement (voir bandeau
+// d'avertissement de l'interface) : aucun document réel n'a servi de base.
+const DEMO_DOC_DISCLAIMER = "Document produit dans le cadre d'un outil de démonstration : faits, identités et pièces mentionnés sont entièrement fictifs et ne correspondent à aucune procédure réelle. La conception de cet outil n'a nécessité l'usage d'aucun document émanant d'une juridiction.";
 
 // ---------------------------------------------------------------------------
 // Génération du document de classement (Word)
@@ -261,6 +293,7 @@ async function generateClassementDocx(d, motif, comment) {
     par('(ou le magistrat du parquet délégataire)'),
     new Paragraph({ text: '', spacing: { after: 400 } }),
     new Paragraph({ children: [new TextRun({ text: "Cet avis est notifié au plaignant conformément à l'article 40-2 du code de procédure pénale.", italics: true, size: 18 })] }),
+    new Paragraph({ children: [new TextRun({ text: DEMO_DOC_DISCLAIMER, italics: true, size: 16, color: '999999' })], spacing: { before: 300 } }),
   ];
 
   const document = new Document({ sections: [{ properties: {}, children }] });
@@ -293,9 +326,164 @@ function generateClassementDocHtml(d, motif, comment) {
 <p>(ou le magistrat du parquet délégataire)</p>
 <p>&nbsp;</p>
 <p class="i">Cet avis est notifié au plaignant conformément à l'article 40-2 du code de procédure pénale.</p>
+<p class="i" style="color:#999;">${escapeHtml(DEMO_DOC_DISCLAIMER)}</p>
 </body></html>`;
   const blob = new Blob(['﻿', html], { type: 'application/msword' });
   downloadBlob(blob, `Classement_${slug(d.name)}_${d.id}.doc`);
+}
+
+// ---------------------------------------------------------------------------
+// Mots-clés : champ "keyword"/"keywords" du template, sinon extraction des
+// mots communs à plusieurs objets (subject) du corpus.
+// ---------------------------------------------------------------------------
+const FR_STOPWORDS = new Set([
+  'les', 'des', 'une', 'un', 'de', 'la', 'le', 'et', 'à', 'au', 'aux', 'pour', 'par', 'sur', 'dans',
+  'avec', 'ce', 'cette', 'ces', 'en', 'du', 'que', 'qui', 'son', 'sa', 'ses', 'plus', 'sans', 'ou',
+  'ne', 'pas', 'est', 'été', 'être', 'avoir', 'ont', 'sont', 'mon', 'ma', 'mes', 'se', 'leur', 'leurs',
+  'vers', 'chez', 'entre', 'deux', 'tout', 'toute', 'tous', 'toutes', 'fait', 'faits', 'plainte',
+  'courrier', 'madame', 'monsieur', 'contre', 'formelle', 'dépôt', 'depuis', 'lors',
+]);
+
+function tokenizeSubject(subject) {
+  return (subject || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 4 && !FR_STOPWORDS.has(w));
+}
+
+function rawKeywordsOf(raw) {
+  const kw = raw.keyword != null ? raw.keyword : raw.keywords;
+  if (kw == null) return null;
+  const list = Array.isArray(kw) ? kw : String(kw).split(',');
+  return list.map(s => String(s).trim()).filter(Boolean);
+}
+
+let DOC_KEYWORDS = {};       // id -> [mots-clés affichables]
+let KEYWORD_LIST = [];       // [{ key, label, count }] triés par fréquence décroissante
+let checkedKeywords = new Set(); // clés cochées dans le filtre (tout coché par défaut)
+
+function buildKeywordIndex() {
+  const result = {};
+  const fallbackDocs = [];
+
+  DOCUMENTS.forEach(raw => {
+    const explicit = rawKeywordsOf(raw);
+    if (explicit && explicit.length) result[raw.id] = explicit;
+    else fallbackDocs.push(raw);
+  });
+
+  // Vocabulaire commun déduit des objets (subject) des documents qui n'ont
+  // pas de champ mots-clés explicite : mots partagés par au moins 2 courriers.
+  const freq = new Map();
+  fallbackDocs.forEach(raw => {
+    new Set(tokenizeSubject(raw.subject)).forEach(t => freq.set(t, (freq.get(t) || 0) + 1));
+  });
+  const common = new Set([...freq.entries()].filter(([, c]) => c >= 2).map(([t]) => t));
+
+  fallbackDocs.forEach(raw => {
+    const tokens = tokenizeSubject(raw.subject);
+    let kws = tokens.filter(t => common.has(t));
+    if (!kws.length) kws = [...new Set(tokens)].sort((a, b) => b.length - a.length).slice(0, 4);
+    result[raw.id] = [...new Set(kws)];
+  });
+
+  const counts = new Map(); // clé normalisée -> { label affiché, nb de documents }
+  Object.values(result).forEach(list => {
+    new Set(list.map(k => k.toLowerCase())).forEach(keyLower => {
+      const label = list.find(k => k.toLowerCase() === keyLower);
+      const cur = counts.get(keyLower) || { label, count: 0 };
+      cur.count += 1;
+      counts.set(keyLower, cur);
+    });
+  });
+
+  DOC_KEYWORDS = result;
+  // Pas de troncature : toutes les clés doivent avoir une case à cocher,
+  // sinon un document dont aucun mot-clé ne serait affiché disparaîtrait
+  // silencieusement même quand "tout" est coché.
+  KEYWORD_LIST = [...counts.entries()]
+    .map(([key, v]) => ({ key, label: v.label, count: v.count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+  checkedKeywords = new Set(KEYWORD_LIST.map(k => k.key)); // tout coché par défaut
+}
+
+function docKeywordsLower(id) {
+  return (DOC_KEYWORDS[id] || []).map(k => k.toLowerCase());
+}
+
+// Liste déroulante à cases à cocher (tout coché par défaut, avec
+// tout sélectionner / tout désélectionner). Construite une seule fois : les
+// cases elles-mêmes gèrent leur propre état, seule la liste des courriers
+// est re-rendue à chaque changement.
+function renderKeywordFilters() {
+  const wrap = document.getElementById('keyword-filters');
+  if (!wrap) return;
+  if (!KEYWORD_LIST.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = `
+    <div class="kw-dropdown">
+      <button type="button" class="kw-dropdown-toggle" id="kw-dropdown-toggle">
+        <span>Mots-clés</span>
+        <span class="kw-dropdown-count" id="kw-dropdown-count"></span>
+        <span class="kw-dropdown-caret">▾</span>
+      </button>
+      <div class="kw-dropdown-panel" id="kw-dropdown-panel">
+        <div class="kw-dropdown-actions">
+          <button type="button" id="kw-select-all">Tout sélectionner</button>
+          <button type="button" id="kw-select-none">Tout désélectionner</button>
+        </div>
+        <div class="kw-dropdown-list">
+          ${KEYWORD_LIST.map(k => `
+            <label class="kw-option">
+              <input type="checkbox" data-key="${escapeAttr(k.key)}" ${checkedKeywords.has(k.key) ? 'checked' : ''}>
+              <span class="kw-option-label">${escapeHtml(k.label)}</span>
+              <span class="kw-option-count">${k.count}</span>
+            </label>`).join('')}
+        </div>
+      </div>
+    </div>`;
+
+  const toggle = document.getElementById('kw-dropdown-toggle');
+  const panel = document.getElementById('kw-dropdown-panel');
+  const countEl = document.getElementById('kw-dropdown-count');
+
+  function updateCount() {
+    countEl.textContent = `${checkedKeywords.size}/${KEYWORD_LIST.length}`;
+  }
+  updateCount();
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panel.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!panel.contains(e.target) && e.target !== toggle) panel.classList.remove('open');
+  });
+
+  panel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const key = cb.dataset.key;
+      if (cb.checked) checkedKeywords.add(key); else checkedKeywords.delete(key);
+      updateCount();
+      renderMailList();
+    });
+  });
+
+  document.getElementById('kw-select-all').addEventListener('click', () => {
+    checkedKeywords = new Set(KEYWORD_LIST.map(k => k.key));
+    panel.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+    updateCount();
+    renderMailList();
+  });
+  document.getElementById('kw-select-none').addEventListener('click', () => {
+    checkedKeywords.clear();
+    panel.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+    updateCount();
+    renderMailList();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -303,9 +491,9 @@ function generateClassementDocHtml(d, motif, comment) {
 // ---------------------------------------------------------------------------
 let selectedId = null;
 let lbZoom = 1;             // zoom du scan en grand (lightbox)
-let pendingAction = null;   // 'classer' | 'poursuite' | 'transfert' | null
+let pendingAction = null;   // 'classer' | 'poursuite' | 'reorientation' | 'reorientation_tribunal' | 'reorientation_service' | null
 let selectedMotif = null;   // { code, label }
-let selectedTransferTarget = null; // magistrat sélectionné via @mention, ou null (bureau d'ordre)
+let selectedReorientationTarget = null; // magistrat/service sélectionné via @mention
 
 // ---------------------------------------------------------------------------
 // Rendu — liste des courriers
@@ -313,7 +501,13 @@ let selectedTransferTarget = null; // magistrat sélectionné via @mention, ou n
 function renderMailList() {
   const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
   const items = DOCUMENTS.map(raw => mergedDoc(raw.id))
-    .filter(d => !q || (d.name + ' ' + d.subject).toLowerCase().includes(q))
+    .filter(d => {
+      if (q && !(d.name + ' ' + d.subject).toLowerCase().includes(q)) return false;
+      const kws = docKeywordsLower(d.id);
+      // Un document sans mot-clé indexé reste toujours visible (rien à cocher/décocher pour lui).
+      if (kws.length && !kws.some(k => checkedKeywords.has(k))) return false;
+      return true;
+    })
     .sort((a, b) => {
       const da = parseDateFlexible(a.date), db = parseDateFlexible(b.date);
       if (da && db) return db - da;
@@ -327,6 +521,7 @@ function renderMailList() {
   wrap.innerHTML = '';
   items.forEach(d => {
     const status = getStatus(d.id);
+    const nComments = getComments(d.id).length;
     const el = document.createElement('div');
     el.className = 'mail-item' + (d.id === selectedId ? ' selected' : '');
     el.addEventListener('click', () => selectDoc(d.id));
@@ -336,7 +531,7 @@ function renderMailList() {
         <span class="date">${escapeHtml(d.date || '')}</span>
       </div>
       <div class="subject">${escapeHtml(d.subject || '')}</div>
-      <div class="meta-row">${statusBadge(status)}${d.minor === 'O' ? '<span class="badge badge-mineur">Mineur</span>' : ''}</div>
+      <div class="meta-row">${statusBadge(status)}${d.minor ? '<span class="badge badge-mineur">Mineur</span>' : ''}${nComments ? '<span class="badge badge-signale">Signalé</span>' : ''}</div>
     `;
     wrap.appendChild(el);
   });
@@ -348,7 +543,7 @@ function selectDoc(id) {
   selectedId = id;
   pendingAction = null;
   selectedMotif = null;
-  selectedTransferTarget = null;
+  selectedReorientationTarget = null;
   renderMailList();
   showReader(id);
 }
@@ -366,6 +561,7 @@ function showReader(id) {
   document.getElementById('reader-empty').style.display = 'none';
   document.getElementById('reader-content').style.display = 'flex';
   renderReaderFields();
+  renderSignalementBox();
 }
 
 function openLightbox() {
@@ -402,15 +598,6 @@ function fieldHtml(d, key, label, kind) {
   </div>`;
 }
 
-function selectFieldHtml(d, key, label, options) {
-  const edited = d[key] !== d._original[key];
-  const opts = options.map(([v, l]) => `<option value="${v}" ${d[key] === v ? 'selected' : ''}>${l}</option>`).join('');
-  return `<div class="field${edited ? ' is-edited' : ''}">
-    <label><span class="edited-dot"></span>${label}</label>
-    <select data-field="${key}">${opts}</select>
-  </div>`;
-}
-
 function renderReaderFields() {
   const d = mergedDoc(selectedId);
   const scroll = document.getElementById('reader-fields');
@@ -427,10 +614,10 @@ function renderReaderFields() {
       <legend>Courrier</legend>
       <div class="two-col">
         ${fieldHtml(d, 'date', 'Date du courrier')}
-        ${selectFieldHtml(d, 'type', "Type d'atteinte", [['bien', 'Bien'], ['personne', 'Personne'], ['nation', 'Nation']])}
+        ${fieldHtml(d, 'type', "Type d'atteinte / infraction")}
       </div>
       ${fieldHtml(d, 'subject', 'Objet', 'textarea')}
-      ${selectFieldHtml(d, 'minor', 'Mineur impliqué', [['N', 'Non'], ['O', 'Oui']])}
+      ${fieldHtml(d, 'minor', 'Mineur impliqué (nom, ou vide si aucun)')}
     </fieldset>
 
     <fieldset>
@@ -454,7 +641,7 @@ function renderReaderFields() {
 }
 
 // ---------------------------------------------------------------------------
-// Rendu — panneau de décision (classement / poursuites)
+// Rendu — panneau de décision (classement / poursuites / réorientation)
 // ---------------------------------------------------------------------------
 function renderReaderDecision() {
   const box = document.getElementById('reader-decision');
@@ -472,9 +659,19 @@ function renderReaderDecision() {
     wirePoursuiteForm();
     return;
   }
-  if (pendingAction === 'transfert') {
-    box.innerHTML = transfertFormHtml(rec);
-    wireTransfertForm();
+  if (pendingAction === 'reorientation') {
+    box.innerHTML = reorientationChoiceHtml();
+    wireReorientationChoice();
+    return;
+  }
+  if (pendingAction === 'reorientation_tribunal') {
+    box.innerHTML = reorientationTribunalFormHtml(rec);
+    wireReorientationTribunalForm();
+    return;
+  }
+  if (pendingAction === 'reorientation_service') {
+    box.innerHTML = reorientationServiceFormHtml(rec);
+    wireReorientationServiceForm();
     return;
   }
 
@@ -483,7 +680,7 @@ function renderReaderDecision() {
       <div class="action-buttons-col">
         <button class="btn btn-classer" id="btn-classer">Classer sans suite</button>
         <button class="btn btn-poursuite" id="btn-poursuite">Engager des poursuites</button>
-        <button class="btn btn-transfert" id="btn-transfert">Transférer à un autre magistrat</button>
+        <button class="btn btn-reorientation" id="btn-reorientation">Réorientation</button>
       </div>`;
     document.getElementById('btn-classer').addEventListener('click', () => {
       pendingAction = 'classer'; selectedMotif = null; renderReaderDecision();
@@ -491,8 +688,8 @@ function renderReaderDecision() {
     document.getElementById('btn-poursuite').addEventListener('click', () => {
       pendingAction = 'poursuite'; renderReaderDecision();
     });
-    document.getElementById('btn-transfert').addEventListener('click', () => {
-      pendingAction = 'transfert'; selectedTransferTarget = null; renderReaderDecision();
+    document.getElementById('btn-reorientation').addEventListener('click', () => {
+      pendingAction = 'reorientation'; selectedReorientationTarget = null; renderReaderDecision();
     });
     return;
   }
@@ -504,9 +701,13 @@ function renderReaderDecision() {
       if (rec.status === 'classe') {
         pendingAction = 'classer';
         selectedMotif = { code: rec.motifCode, label: rec.motifLabel };
-      } else if (rec.status === 'transfere') {
-        pendingAction = 'transfert';
-        selectedTransferTarget = rec.transferTo || null;
+      } else if (rec.status === 'reoriente') {
+        if (rec.reorientationType === 'tribunal_incompetent') {
+          pendingAction = 'reorientation_tribunal';
+        } else {
+          pendingAction = 'reorientation_service';
+          selectedReorientationTarget = rec.reorientationTarget || null;
+        }
       } else {
         pendingAction = 'poursuite';
       }
@@ -516,16 +717,28 @@ function renderReaderDecision() {
 }
 
 function decisionSummaryHtml(rec) {
-  if (rec.status === 'transfere') {
-    const dest = rec.transferTo ? rec.transferTo.name : "Bureau d'ordre";
-    const destRole = rec.transferTo ? rec.transferTo.role : "Réaffectation à déterminer";
+  if (rec.status === 'reoriente') {
+    if (rec.reorientationType === 'tribunal_incompetent') {
+      return `
+        <h3>Décision</h3>
+        <div class="decision-summary">
+          <div class="label">Statut</div><div class="value">Réorienté — tribunal non compétent</div>
+          <div class="label">Explication</div><div class="note">${escapeHtml(rec.reorientationMotif || '—')}</div>
+          <div class="label" style="margin-top:8px;">Décidé le</div><div class="value">${escapeHtml(formatTs(rec.decidedAt))}</div>
+        </div>
+        <div class="decision-actions">
+          <button class="btn btn-secondary" id="btn-edit-decision">Modifier la décision</button>
+        </div>`;
+    }
+    const dest = rec.reorientationTarget ? rec.reorientationTarget.name : '—';
+    const destContact = rec.reorientationTarget ? `${rec.reorientationTarget.role} · ${rec.reorientationTarget.email}` : '';
     return `
       <h3>Décision</h3>
       <div class="decision-summary">
-        <div class="label">Statut</div><div class="value">Transféré</div>
+        <div class="label">Statut</div><div class="value">Réorienté — autre service / magistrat</div>
         <div class="label">Destinataire</div><div class="value">${escapeHtml(dest)}</div>
-        <div class="label">Fonction</div><div class="value">${escapeHtml(destRole)}</div>
-        ${rec.transferNote ? `<div class="label">Note</div><div class="note">${escapeHtml(rec.transferNote)}</div>` : ''}
+        ${destContact ? `<div class="label">Contact</div><div class="value">${escapeHtml(destContact)}</div>` : ''}
+        ${rec.reorientationNote ? `<div class="label">Note</div><div class="note">${escapeHtml(rec.reorientationNote)}</div>` : ''}
         <div class="label" style="margin-top:8px;">Décidé le</div><div class="value">${escapeHtml(formatTs(rec.decidedAt))}</div>
       </div>
       <div class="decision-actions">
@@ -615,6 +828,7 @@ function wireClassementForm(d) {
       renderMailList();
       renderReaderFields();
       renderDbTable();
+      renderKpis();
       toast('Document de classement généré et téléchargé.');
     } catch (e) {
       console.error(e);
@@ -637,7 +851,7 @@ function poursuiteFormHtml(rec) {
       </div>
       <div class="field">
         <label>Note de suivi (facultatif)</label>
-        <textarea id="poursuite-note" placeholder="Instructions pour le bureau d'ordre / le service enquêteur…">${escapeHtml(noteVal)}</textarea>
+        <textarea id="poursuite-note" placeholder="Instructions pour le BOP / le service enquêteur…">${escapeHtml(noteVal)}</textarea>
       </div>
       <div class="decision-actions">
         <button class="btn btn-primary" id="btn-confirm-poursuite">Confirmer</button>
@@ -658,56 +872,127 @@ function wirePoursuiteForm() {
     renderMailList();
     renderReaderFields();
     renderDbTable();
+    renderKpis();
     toast('Poursuites engagées, courrier mis à jour.');
   });
 }
 
 // ---------------------------------------------------------------------------
-// Transfert à un autre magistrat (mention @nom, ou retour au bureau d'ordre)
+// Réorientation : soit tribunal non compétent (motif libre, pas de document
+// généré), soit réorientation vers un autre service/magistrat du répertoire
+// (mention @nom, magistrats nommés + services génériques par email).
 // ---------------------------------------------------------------------------
-function transfertFormHtml(rec) {
-  let initialValue = '';
-  if (selectedTransferTarget) initialValue = '@' + selectedTransferTarget.name;
-  const noteVal = rec.transferNote || '';
+function reorientationChoiceHtml() {
   return `
-    <h3>Transférer à un autre magistrat</h3>
+    <h3>Réorientation</h3>
     <div class="decision-panel">
-      <div class="field mention-field">
-        <label>Destinataire</label>
-        <input type="text" id="transfer-input" autocomplete="off"
-          placeholder="@ nom du magistrat…" value="${escapeAttr(initialValue)}">
-        <div class="mention-suggestions" id="transfer-suggestions"></div>
-        <div class="mention-hint">Tapez « @ » suivi d'un nom pour rechercher dans le répertoire.
-          Laissez le champ vide si vous ne savez pas à qui l'affecter : le courrier
-          retournera au bureau d'ordre.</div>
-      </div>
-      <div class="field">
-        <label>Note à l'attention du destinataire (facultatif)</label>
-        <textarea id="transfer-note" placeholder="Motif du transfert, éléments utiles…">${escapeHtml(noteVal)}</textarea>
+      <div class="reorientation-choice">
+        <button type="button" class="choice-card" id="choice-tribunal">
+          <div class="choice-title">Tribunal non compétent</div>
+          <div class="choice-desc">Le tribunal saisi n'est pas compétent pour ce courrier. Explication libre, sans document généré.</div>
+        </button>
+        <button type="button" class="choice-card" id="choice-service">
+          <div class="choice-title">Autre service / magistrat</div>
+          <div class="choice-desc">Taguer un magistrat nommé ou un service (adresse générique) du répertoire pour lui transmettre le dossier.</div>
+        </button>
       </div>
       <div class="decision-actions">
-        <button class="btn btn-primary" id="btn-confirm-transfert">Confirmer le transfert</button>
-        <button class="btn btn-secondary" id="btn-cancel-transfert">Annuler</button>
+        <button class="btn btn-secondary" id="btn-cancel-reorientation">Annuler</button>
       </div>
     </div>`;
 }
 
-function mentionSuggestionsHtml(query) {
+function wireReorientationChoice() {
+  document.getElementById('choice-tribunal').addEventListener('click', () => {
+    pendingAction = 'reorientation_tribunal'; renderReaderDecision();
+  });
+  document.getElementById('choice-service').addEventListener('click', () => {
+    pendingAction = 'reorientation_service'; selectedReorientationTarget = null; renderReaderDecision();
+  });
+  document.getElementById('btn-cancel-reorientation').addEventListener('click', () => {
+    pendingAction = null; renderReaderDecision();
+  });
+}
+
+function reorientationTribunalFormHtml(rec) {
+  const motifVal = rec.status === 'reoriente' && rec.reorientationType === 'tribunal_incompetent' ? (rec.reorientationMotif || '') : '';
+  return `
+    <h3>Réorientation — tribunal non compétent</h3>
+    <div class="decision-panel">
+      <div class="field">
+        <label>Explication (obligatoire)</label>
+        <textarea id="reorientation-tribunal-motif" placeholder="Pourquoi ce tribunal n'est-il pas compétent, vers quelle juridiction le dossier doit-il être réorienté…">${escapeHtml(motifVal)}</textarea>
+      </div>
+      <div class="decision-actions">
+        <button class="btn btn-primary" id="btn-confirm-reorientation-tribunal">Confirmer la réorientation</button>
+        <button class="btn btn-secondary" id="btn-back-reorientation">Retour</button>
+      </div>
+    </div>`;
+}
+
+function wireReorientationTribunalForm() {
+  document.getElementById('btn-back-reorientation').addEventListener('click', () => {
+    pendingAction = 'reorientation'; renderReaderDecision();
+  });
+  document.getElementById('btn-confirm-reorientation-tribunal').addEventListener('click', () => {
+    const motif = document.getElementById('reorientation-tribunal-motif').value.trim();
+    if (!motif) { toast('Merci de préciser le motif d’incompétence.'); return; }
+    recordDecision(selectedId, {
+      status: 'reoriente', reorientationType: 'tribunal_incompetent', reorientationMotif: motif, decidedAt: Date.now(),
+    });
+    pendingAction = null;
+    renderMailList();
+    renderReaderFields();
+    renderDbTable();
+    renderKpis();
+    toast('Courrier réorienté (tribunal non compétent).');
+  });
+}
+
+function reorientationServiceFormHtml(rec) {
+  let initialValue = '';
+  if (selectedReorientationTarget) initialValue = '@' + selectedReorientationTarget.name;
+  const noteVal = rec.status === 'reoriente' && rec.reorientationType === 'service' ? (rec.reorientationNote || '') : '';
+  return `
+    <h3>Réorientation — autre service / magistrat</h3>
+    <div class="decision-panel">
+      <div class="field mention-field">
+        <label>Destinataire</label>
+        <input type="text" id="reorientation-input" autocomplete="off"
+          placeholder="@ nom du magistrat ou du service…" value="${escapeAttr(initialValue)}">
+        <div class="mention-suggestions" id="reorientation-suggestions"></div>
+        <div class="mention-hint">Tapez « @ » suivi d'un nom pour rechercher un magistrat ou un service
+          (adresse générique) dans le répertoire.</div>
+      </div>
+      <div class="field">
+        <label>Note à l'attention du destinataire (facultatif)</label>
+        <textarea id="reorientation-note" placeholder="Motif de la réorientation, éléments utiles…">${escapeHtml(noteVal)}</textarea>
+      </div>
+      <div class="decision-actions">
+        <button class="btn btn-primary" id="btn-confirm-reorientation-service">Confirmer la réorientation</button>
+        <button class="btn btn-secondary" id="btn-back-reorientation">Retour</button>
+      </div>
+    </div>`;
+}
+
+function reorientationMentionSuggestionsHtml(query) {
   const q = query.trim().toLowerCase();
-  const matches = MAGISTRATS.filter(m => m.name.toLowerCase().includes(q)).slice(0, 6);
+  const matches = REORIENTATION_TARGETS.filter(m =>
+    m.name.toLowerCase().includes(q) || (m.email || '').toLowerCase().includes(q)
+  ).slice(0, 8);
   if (!matches.length) {
-    return `<div class="mention-empty">Aucun magistrat trouvé — laissez le champ vide pour renvoyer au bureau d'ordre.</div>`;
+    return `<div class="mention-empty">Aucun résultat dans le répertoire.</div>`;
   }
   return matches.map(m => `
     <div class="mention-item" data-id="${m.id}">
-      <span class="mention-name">${escapeHtml(m.name)}</span>
-      <span class="mention-role">${escapeHtml(m.role)}</span>
+      <span class="mention-name">${escapeHtml(m.name)}${m.kind === 'service' ? ' <span class="mention-kind">service</span>' : ''}</span>
+      <span class="mention-role">${escapeHtml(m.role)} · ${escapeHtml(m.email)}</span>
     </div>`).join('');
 }
 
-function wireTransfertForm() {
-  const input = document.getElementById('transfer-input');
-  const suggestions = document.getElementById('transfer-suggestions');
+function wireReorientationServiceForm() {
+  const input = document.getElementById('reorientation-input');
+  const suggestions = document.getElementById('reorientation-suggestions');
 
   function closeSuggestions() {
     suggestions.classList.remove('open');
@@ -715,12 +1000,12 @@ function wireTransfertForm() {
   }
 
   function openSuggestionsFor(query) {
-    suggestions.innerHTML = mentionSuggestionsHtml(query);
+    suggestions.innerHTML = reorientationMentionSuggestionsHtml(query);
     suggestions.classList.add('open');
     suggestions.querySelectorAll('.mention-item').forEach(el => {
       el.addEventListener('click', () => {
-        const m = MAGISTRATS.find(x => x.id === el.dataset.id);
-        selectedTransferTarget = m;
+        const m = REORIENTATION_TARGETS.find(x => x.id === el.dataset.id);
+        selectedReorientationTarget = m;
         input.value = '@' + m.name;
         closeSuggestions();
         input.focus();
@@ -731,8 +1016,8 @@ function wireTransfertForm() {
   input.addEventListener('input', () => {
     const val = input.value;
     const at = val.lastIndexOf('@');
-    if (val !== ('@' + (selectedTransferTarget && selectedTransferTarget.name || ''))) {
-      selectedTransferTarget = null;
+    if (val !== ('@' + (selectedReorientationTarget && selectedReorientationTarget.name || ''))) {
+      selectedReorientationTarget = null;
     }
     if (at === -1) { closeSuggestions(); return; }
     openSuggestionsFor(val.slice(at + 1));
@@ -744,27 +1029,67 @@ function wireTransfertForm() {
     if (!suggestions.contains(e.target) && e.target !== input) closeSuggestions();
   }, { once: true });
 
-  document.getElementById('btn-cancel-transfert').addEventListener('click', () => {
-    pendingAction = null; selectedTransferTarget = null; renderReaderDecision();
+  document.getElementById('btn-back-reorientation').addEventListener('click', () => {
+    pendingAction = 'reorientation'; selectedReorientationTarget = null; renderReaderDecision();
   });
-  document.getElementById('btn-confirm-transfert').addEventListener('click', () => {
+  document.getElementById('btn-confirm-reorientation-service').addEventListener('click', () => {
     const val = input.value.trim();
-    const transferNote = document.getElementById('transfer-note').value;
-    let target = null;
-    if (val) {
-      if (!selectedTransferTarget || ('@' + selectedTransferTarget.name) !== val) {
-        toast("Sélectionnez un magistrat dans la liste, ou laissez le champ vide pour renvoyer au bureau d'ordre.");
-        return;
-      }
-      target = selectedTransferTarget;
+    const reorientationNote = document.getElementById('reorientation-note').value;
+    if (!val || !selectedReorientationTarget || ('@' + selectedReorientationTarget.name) !== val) {
+      toast('Sélectionnez un magistrat ou un service dans la liste.');
+      return;
     }
-    recordDecision(selectedId, { status: 'transfere', transferTo: target, transferNote, decidedAt: Date.now() });
+    const target = selectedReorientationTarget;
+    recordDecision(selectedId, {
+      status: 'reoriente', reorientationType: 'service', reorientationTarget: target, reorientationNote, decidedAt: Date.now(),
+    });
     pendingAction = null;
-    selectedTransferTarget = null;
+    selectedReorientationTarget = null;
     renderMailList();
     renderReaderFields();
     renderDbTable();
-    toast(target ? `Courrier transféré à ${target.name}.` : "Courrier renvoyé au bureau d'ordre.");
+    renderKpis();
+    toast(`Courrier réorienté vers ${target.name}.`);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Signalement au BOP — indépendant des 3 décisions, toujours
+// disponible, n'affecte pas le statut traité/non traité du courrier.
+// ---------------------------------------------------------------------------
+function renderSignalementBox() {
+  const box = document.getElementById('signalement-box');
+  if (!box || !selectedId) return;
+  const id = selectedId;
+  const comments = getComments(id);
+  const history = comments.length
+    ? `<div class="signalement-history">${comments.slice().reverse().map(c => `
+        <div class="signalement-item">
+          <div class="signalement-text">${escapeHtml(c.text)}</div>
+          <div class="signalement-ts">${escapeHtml(formatTs(c.ts))}</div>
+        </div>`).join('')}</div>`
+    : '';
+
+  box.innerHTML = `
+    <details class="signalement-panel">
+      <summary>📎 Signaler un problème au BOP${comments.length ? ` <span class="signalement-badge-count">${comments.length}</span>` : ''}</summary>
+      <div class="signalement-body">
+        <p class="signalement-hint">Ex. numérisation illisible, pièce manquante, dossier probablement mal orienté… Message local à cette démo (aucun envoi réel), qui simule une remontée au BOP.</p>
+        <textarea id="signalement-input" placeholder="Décrire le problème…"></textarea>
+        <button class="btn btn-secondary btn-block" id="btn-send-signalement">Envoyer au BOP</button>
+        ${history}
+      </div>
+    </details>`;
+
+  document.getElementById('btn-send-signalement').addEventListener('click', () => {
+    const input = document.getElementById('signalement-input');
+    const text = input.value.trim();
+    if (!text) { toast('Écrivez un message avant de l’envoyer.'); return; }
+    addSignalement(id, text);
+    toast("Signalement envoyé au BOP.");
+    renderSignalementBox();
+    renderMailList();
+    renderDbTable();
   });
 }
 
@@ -777,10 +1102,15 @@ function renderDbTable() {
   DOCUMENTS.map(raw => mergedDoc(raw.id)).forEach(d => {
     const rec = STATE.docs[d.id] || {};
     const status = getStatus(d.id);
+    const nComments = getComments(d.id).length;
     let orientation = '—';
     if (status === 'classe') orientation = `${rec.motifCode} — ${rec.motifLabel}`;
     else if (status === 'poursuites') orientation = rec.poursuiteType || '—';
-    else if (status === 'transfere') orientation = rec.transferTo ? `→ ${rec.transferTo.name}` : "→ Bureau d'ordre";
+    else if (status === 'reoriente') {
+      orientation = rec.reorientationType === 'tribunal_incompetent'
+        ? 'Tribunal non compétent'
+        : (rec.reorientationTarget ? `→ ${rec.reorientationTarget.name}` : '→ (destinataire non renseigné)');
+    }
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -788,8 +1118,8 @@ function renderDbTable() {
       <td>${escapeHtml(d.subject || '—')}</td>
       <td>${escapeHtml(d.date || '—')}</td>
       <td>${escapeHtml(typeLabel(d.type))}</td>
-      <td>${d.minor === 'O' ? 'Oui' : 'Non'}</td>
-      <td>${statusBadge(status)}</td>
+      <td>${d.minor ? escapeHtml(d.minor) : 'Non'}</td>
+      <td>${statusBadge(status)}${nComments ? ' <span class="badge badge-signale">Signalé</span>' : ''}</td>
       <td>${escapeHtml(orientation)}</td>
       <td><button class="link-btn" data-id="${d.id}">Ouvrir</button></td>
     `;
@@ -808,13 +1138,78 @@ function renderMiniStats() {
     nontraite: all.filter(s => s === 'nontraite').length,
     classe: all.filter(s => s === 'classe').length,
     poursuites: all.filter(s => s === 'poursuites').length,
-    transfere: all.filter(s => s === 'transfere').length,
+    reoriente: all.filter(s => s === 'reoriente').length,
   };
   el.innerHTML = `
     <div class="stat"><div class="num">${counts.nontraite}</div><div class="lbl">Non traités</div></div>
     <div class="stat"><div class="num">${counts.classe}</div><div class="lbl">Classés sans suite</div></div>
     <div class="stat"><div class="num">${counts.poursuites}</div><div class="lbl">Poursuites engagées</div></div>
-    <div class="stat"><div class="num">${counts.transfere}</div><div class="lbl">Transférés</div></div>
+    <div class="stat"><div class="num">${counts.reoriente}</div><div class="lbl">Réorientés</div></div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// KPI magistrat (onglet base de données) — agrégés sur l'ensemble des
+// documents du prototype. Le délai moyen de traitement s'appuie sur le champ
+// mocké "digitized_at" des templates ; à défaut de décision enregistrée, une
+// valeur d'exemple est affichée (clairement signalée comme telle).
+// ---------------------------------------------------------------------------
+function renderKpis() {
+  const el = document.getElementById('kpi-grid');
+  if (!el) return;
+
+  const total = DOCUMENTS.length;
+  const statuses = DOCUMENTS.map(raw => getStatus(raw.id));
+  const nTraite = statuses.filter(s => s !== 'nontraite').length;
+  const nClasse = statuses.filter(s => s === 'classe').length;
+  const nPoursuites = statuses.filter(s => s === 'poursuites').length;
+  const nReoriente = statuses.filter(s => s === 'reoriente').length;
+  const pct = (n, d) => d ? Math.round((n / d) * 100) : 0;
+
+  const delays = [];
+  DOCUMENTS.forEach(raw => {
+    const rec = STATE.docs[raw.id];
+    if (rec && rec.decidedAt && raw.digitized_at) {
+      const dig = new Date(raw.digitized_at).getTime();
+      if (!isNaN(dig) && rec.decidedAt > dig) delays.push((rec.decidedAt - dig) / 86400000);
+    }
+  });
+  let delayLabel, delayNote;
+  if (delays.length) {
+    const avg = delays.reduce((a, b) => a + b, 0) / delays.length;
+    delayLabel = avg.toFixed(1).replace('.', ',') + ' j';
+    delayNote = `sur ${delays.length} dossier(s) réellement traité(s)`;
+  } else {
+    delayLabel = '3,4 j';
+    delayNote = 'valeur d’exemple — aucun dossier traité pour l’instant';
+  }
+
+  el.innerHTML = `
+    <div class="kpi-tile">
+      <div class="kpi-value">${pct(nTraite, total)}%</div>
+      <div class="kpi-label">Dossiers traités</div>
+      <div class="kpi-sub">${nTraite} / ${total} dossier(s)</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-value">${pct(nClasse, nTraite)}%</div>
+      <div class="kpi-label">Classés sans suite</div>
+      <div class="kpi-sub">parmi les dossiers traités</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-value">${pct(nPoursuites, nTraite)}%</div>
+      <div class="kpi-label">Poursuites engagées</div>
+      <div class="kpi-sub">parmi les dossiers traités</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-value">${pct(nReoriente, nTraite)}%</div>
+      <div class="kpi-label">Réorientés</div>
+      <div class="kpi-sub">parmi les dossiers traités</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-value">${delayLabel}</div>
+      <div class="kpi-label">Délai moyen après numérisation</div>
+      <div class="kpi-sub">${delayNote}</div>
+    </div>
   `;
 }
 
@@ -825,7 +1220,7 @@ function switchView(view) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   document.getElementById('view-mail').classList.toggle('active', view === 'mail');
   document.getElementById('view-db').classList.toggle('active', view === 'db');
-  if (view === 'db') renderDbTable();
+  if (view === 'db') { renderDbTable(); renderKpis(); }
 }
 
 // ---------------------------------------------------------------------------
@@ -857,12 +1252,15 @@ function initStaticListeners() {
 
 function init() {
   if (typeof DOCUMENTS === 'undefined' || !DOCUMENTS.length) {
-    document.getElementById('mail-items').innerHTML = '<div style="padding:16px;color:#888;font-size:13px;">Aucun document trouvé. Lancez <code>python3 generate_data.py</code> dans le dossier <code>mailbox-app</code>.</div>';
+    document.getElementById('mail-items').innerHTML = '<div style="padding:16px;color:#888;font-size:13px;">Aucun document trouvé. Lancez <code>python3 generate_data.py</code> dans le dossier du projet.</div>';
     return;
   }
+  buildKeywordIndex();
+  renderKeywordFilters();
   initStaticListeners();
   renderMailList();
   renderDbTable();
+  renderKpis();
 }
 
 init();

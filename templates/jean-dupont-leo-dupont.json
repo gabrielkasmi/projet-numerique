@@ -1,0 +1,48 @@
+{
+    "sender": {
+        "name": "JEAN DUPONT",
+        "address": {
+            "street": "Bontanie 13",
+            "postal_code": "75004",
+            "city": "PARIS"
+        },
+        "phone_number": null,
+        "email": null
+    },
+    "document_date": "2026-11-15",
+    "subject": "Plainte ave constitution de partie civile faits volontaires commis de mineur de moins de 15 et harcèlement moral.",
+    "type_of_offense": "faits volontaires commis de mineur de moins de 15 et harcèlement moral",
+    "minor_involved": "Léo Dupont",
+    "keywords": [
+        "plainte avec constitution de partie civile",
+        "harcèlement moral",
+        "violences volontaires",
+        "mineur",
+        "traumatisme psychologique",
+        "information judiciaire"
+    ],
+    "keywords_content": {
+        "who": [
+            "mineur",
+            "auteurs"
+        ],
+        "when": [
+            "[date]"
+        ],
+        "where": [
+            "4ème arrondissement",
+            "Hôpital des Enfants Malades"
+        ],
+        "what": [
+            "harcèlement moral",
+            "violences volontaires",
+            "agressions répétées",
+            "traumatisme psychologique"
+        ],
+        "how": [
+            "certificat médical initial (IMII)",
+            "suivi psychologique"
+        ]
+    },
+    "digitized_at": "2026-09-08T08:40:00"
+}

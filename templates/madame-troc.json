@@ -1,0 +1,44 @@
+{
+    "sender": {
+        "name": "Madame TR0C",
+        "address": {
+            "street": "17 rue Victor Hugo",
+            "postal_code": "33 000",
+            "city": "Bordeaux"
+        },
+        "phone_number": null,
+        "email": null
+    },
+    "document_date": "2026-08-15",
+    "subject": "Plainte pour escroquerie",
+    "type_of_offense": "escroquerie",
+    "minor_involved": "Monsieur Alexio MARCHAND",
+    "keywords": [
+        "escroquerie",
+        "achat",
+        "ordinateur portable",
+        "paiement",
+        "plainte"
+    ],
+    "keywords_content": {
+        "who": [
+            "j'ai",
+            "le vendeur",
+            "Monsieur Alexio MARCHAND",
+            "Le Boncoin"
+        ],
+        "when": [
+            "15 août 2026"
+        ],
+        "where": [
+            "Bordeaux"
+        ],
+        "what": [
+            "achat d'un ordinateur portable au prix de 850 euros"
+        ],
+        "how": [
+            "virement bancaire"
+        ]
+    },
+    "digitized_at": "2026-09-09T09:30:00"
+}

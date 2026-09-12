@@ -1,7 +1,7 @@
 # Boîte du magistrat — courriers
 
 Prototype front-only (aucun serveur, aucune base de données partagée) de traitement
-des courriers reçus par un bureau d'ordre : lecture des scans, extraction OCR,
+des courriers reçus par un BOP : lecture des scans, extraction OCR,
 classement et décisions de poursuite.
 
 ## Structure du dépôt

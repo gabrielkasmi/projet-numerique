@@ -6,33 +6,42 @@
             "postal_code": "69006",
             "city": "Lyon"
         },
-        "phone_number": "0612345678",
+        "phone_number": "06 12 34 56 78",
         "email": "jean.martin@example.com"
     },
-    "document_date": "2026-08-23",
+    "document_date": "23 août 2026",
     "subject": "Plainte pour escroquerie et utilisation frauduleuse de mes données personnelles",
-    "type_of_offense": "personne",
-    "minor_involved": "N",
+    "type_of_offense": "escroquerie",
+    "minor_involved": "une personne se présentant comme un conseiller de ma banque",
+    "keywords": [
+        "escroquerie",
+        "banque",
+        "compte bancaire",
+        "virement",
+        "plainte",
+        "données personnelles"
+    ],
     "keywords_content": {
         "who": [
             "Jean Martin",
-            "une personne",
-            "ma banque",
-            "le Procureur de la République"
+            "une personne se présentant comme un conseiller de ma banque"
         ],
         "when": [
             "14 juillet 2026",
             "le lendemain"
         ],
+        "where": [
+            "Lyon"
+        ],
         "what": [
-            "contact par téléphone",
-            "opération suspecte",
-            "virement de 1850 euros"
+            "virement de 1850 euros",
+            "escroquerie",
+            "utilisation frauduleuse de mes données personnelles"
         ],
         "how": [
-            "utilisation de mes informations personnelles",
-            "demande de confirmation",
-            "validation d'une notification"
+            "par téléphone",
+            "en se faisant passer pour un conseiller de banque"
         ]
-    }
+    },
+    "digitized_at": "2026-09-07T11:02:00"
 }

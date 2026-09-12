@@ -11,11 +11,17 @@
     },
     "document_date": "15 novembre 2026",
     "subject": "PLAINTE FORMELLE POUR NUISANCES SONORES ET COMPORTEMENT AGRESSIF",
-    "type_of_offense": "personne",
-    "minor_involved": "N",
+    "type_of_offense": "nuisances sonores, comportement agressif",
+    "minor_involved": "M. Jean-Pierre Moret",
+    "keywords": [
+        "nuisances sonores",
+        "comportement agressif",
+        "agression verbale",
+        "menaces",
+        "enquêtes"
+    ],
     "keywords_content": {
         "who": [
-            "Mme Marie Dubois",
             "M. Jean-Pierre Moret"
         ],
         "when": [
@@ -23,9 +29,12 @@
             "après 22 heures",
             "week-ends"
         ],
+        "where": [
+            "Lyon",
+            "14 rue des Acacias, 69006 Lyon"
+        ],
         "what": [
-            "nuisances sonores",
-            "comportement agressif",
+            "nuisances sonores excessives",
             "musique forte",
             "bruits de travaux la nuit",
             "cris",
@@ -33,9 +42,10 @@
             "menaces"
         ],
         "how": [
-            "nuisances sonores répétées",
+            "plainte formelle",
             "tentatives de conciliation verbale",
             "lettre de mise en demeure"
         ]
-    }
+    },
+    "digitized_at": "2026-09-11T10:00:00"
 }

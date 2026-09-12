@@ -1,0 +1,49 @@
+{
+    "sender": {
+        "name": "Mme Marie Dubois",
+        "address": {
+            "street": "12 rue des Acacias",
+            "postal_code": "69006",
+            "city": "LYON"
+        },
+        "phone_number": null,
+        "email": null
+    },
+    "document_date": "15 novembre 2026",
+    "subject": "PLAINTE FORMELLE POUR DÉGRADATION VOLONTAIRE DE BIENS PRIVÉS ET VIOLATION DE DOMICILE",
+    "type_of_offense": "Dégredation volontaire de biens privés et violation de domicile",
+    "minor_involved": "M. Jean-Pierre Moret",
+    "keywords": [
+        "plainte formelle",
+        "dégâts",
+        "dégredation volontaire",
+        "violation de domicile",
+        "tensions persistantes",
+        "menaces verbales"
+    ],
+    "keywords_content": {
+        "who": [
+            "M. Jean-Pierre Moret",
+            "voisinage"
+        ],
+        "when": [
+            "10 novembre 2026"
+        ],
+        "where": [
+            "ma propriété",
+            "ma cour"
+        ],
+        "what": [
+            "dégâts",
+            "dégredation volontaire",
+            "violation de domicile",
+            "tensions persistantes",
+            "menaces verbales"
+        ],
+        "how": [
+            "pneus latéraux ont été crevés à l'aide d'un objet tranchant",
+            "carrosserie présente des rayures profondes"
+        ]
+    },
+    "digitized_at": "2026-09-10T15:40:00"
+}
